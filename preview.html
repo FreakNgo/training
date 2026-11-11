@@ -13,6 +13,7 @@
 </script>
 </head>
 <body>
+<div id="info"></div>
 <script type="module">
 import * as THREE from 'three';
 const scene = new THREE.Scene();
@@ -30,64 +31,60 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-scene.background = new THREE.Color(0x101018);
+scene.background = new THREE.Color(0x14141a);
 camera.position.set(0, 1.5, 9);
 
 const projects = [
-  { title: 'Aurora', cat: 'Web', url: 'https://aurora.jeromeetienne.com/' },
-  { title: 'Lumen', cat: 'Brand', url: 'https://lumen.jeromeetienne.com/' },
-  { title: 'Prism', cat: 'App', url: 'https://prism.jeromeetienne.com/' },
-  { title: 'Echo', cat: 'Web', url: 'https://echo.jeromeetienne.com/' },
-  { title: 'Nova', cat: 'Brand', url: 'https://nova.jeromeetienne.com/' },
-  { title: 'Orbit', cat: 'App', url: 'https://orbit.jeromeetienne.com/' },
-  { title: 'Pulse', cat: 'Web', url: 'https://pulse.jeromeetienne.com/' }
+  { title: 'Aurora', cat: 'Web', url: 'https://aurora.com' },
+  { title: 'Pulse', cat: 'App', url: 'https://pulseapp.com' },
+  { title: 'Nimbus', cat: 'Brand', url: 'https://nimbusbrand.com' },
+  { title: 'Vertex', cat: 'Web', url: 'https://vertex.com' },
+  { title: 'Lumen', cat: 'App', url: 'https://lumenapp.com' },
+  { title: 'Atlas', cat: 'Brand', url: 'https://atlasbrand.com' },
+  { title: 'Orbit', cat: 'Web', url: 'https://orbit.com' }
 ];
 
 function makeCard(x, project) {
   const card = document.createElement('div');
-  card.style.cssText = 'position:absolute;left:' + x + 'vw;top:30vh;width:240px;height:160px;border-radius:12px;overflow:hidden;';
+  card.style.cssText = 'position:absolute;left:' + x + 'vw;top:20vh;width:20vw;height:30vh;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#fff;font-family:sans-serif;';
   const img = document.createElement('img');
-  img.src = project.url + 'card.jpg';
+  img.src = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/project_' + project.cat.toLowerCase() + '.jpg';
+  img.alt = project.title;
   img.style.width = '100%';
   img.style.height = '100%';
   img.style.objectFit = 'cover';
   card.appendChild(img);
-  const title = document.createElement('h3');
-  title.textContent = project.title;
-  title.style.cssText = 'margin:0;padding:0 16px;font-size:16px;color:#fff;text-align:center;margin-top:10px;';
-  card.appendChild(title);
+  const name = document.createElement('p');
+  name.textContent = project.title;
+  name.style.margin = '0.5em 0 0 0';
+  name.style.fontWeight = 'bold';
+  card.appendChild(name);
   document.body.appendChild(card);
   return card;
 }
 
-const cards = projects.slice(0, 7).map((project, i) => makeCard(i * 33 - 49, project));
+const cards = projects.slice(0, 7).map((project, i) => makeCard(i * 3 - 6, project));
 
-const hint = document.createElement('div');
-hint.textContent = 'Use the left and right arrows to browse the portfolio.';
-hint.style.cssText = 'position:fixed;bottom:20px;left:0;right:0;text-align:center;color:#aaa;font:14px sans-serif;';
-document.body.appendChild(hint);
+const hint = document.getElementById('info');
+hint.innerHTML = '<a href="https://threejs.org" target="_blank">Three.js</a> portfolio gallery<br>Use the arrow keys to browse';
 
-let current = 0;
-cards[current].style.transform = 'scale(1.1)';
-const status = document.getElementById('status') || document.createElement('div');
-status.textContent = projects[current].title;
-status.style.cssText = 'position:fixed;bottom:60px;left:0;right:0;text-align:center;color:#fff;font:24px sans-serif;';
-document.body.appendChild(status);
+let index = 3;
+cards[index].style.transform = 'scale(1.2)';
+cards[index].querySelector('a').style.display = 'block';
 
 window.addEventListener('keydown', (event) => {
-  if (event.code === 'ArrowLeft' && current > 0) current--;
-  if (event.code === 'ArrowRight' && current < 6) current++;
-  cards.forEach((card, i) => {
-    card.style.transform = 'scale(' + (i === current ? 1.1 : 1) + ')';
-  });
-  status.textContent = projects[current].title;
-  status.style.opacity = 1;
-  setTimeout(() => status.style.opacity = 0, 1200);
+  if (event.code === 'ArrowLeft' && index > 0 || event.code === 'ArrowRight' && index < 6) {
+    cards[index].style.transform = '';
+    cards[index].querySelector('a').style.display = 'none';
+    index += event.code === 'ArrowLeft' ? -1 : 1;
+    cards[index].style.transform = 'scale(1.2)';
+    cards[index].querySelector('a').style.display = 'block';
+    hint.textContent = projects[index].title + ' | ' + projects[index].cat + ' | <a href="' + projects[index].url + '" target="_blank">Visit site</a>';
+  }
 });
 
 renderer.setAnimationLoop(() => {
-  camera.position.x += (current * 3 - camera.position.x) * 0.05;
-  camera.lookAt(0, 1.5, 0);
+  camera.position.x += (index * 3 - camera.position.x) * 0.05;
   renderer.render(scene, camera);
 });
 
