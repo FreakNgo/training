@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Portfolio Gallery</title>
+<title>Card Gallery</title>
 <style>body { margin: 0; overflow: hidden; background: #000; }</style>
 <script type="importmap">
 { "imports": {
@@ -13,7 +13,6 @@
 </script>
 </head>
 <body>
-<div id="info"></div>
 <script type="module">
 import * as THREE from 'three';
 const scene = new THREE.Scene();
@@ -31,61 +30,116 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-scene.background = new THREE.Color(0x14141a);
+scene.background = new THREE.Color(0x101018);
 camera.position.set(0, 1.5, 9);
 
-const projects = [
-  { title: 'Aurora', cat: 'Web', url: 'https://aurora.com' },
-  { title: 'Pulse', cat: 'App', url: 'https://pulseapp.com' },
-  { title: 'Nimbus', cat: 'Brand', url: 'https://nimbusbrand.com' },
-  { title: 'Vertex', cat: 'Web', url: 'https://vertex.com' },
-  { title: 'Lumen', cat: 'App', url: 'https://lumenapp.com' },
-  { title: 'Atlas', cat: 'Brand', url: 'https://atlasbrand.com' },
-  { title: 'Orbit', cat: 'Web', url: 'https://orbit.com' }
-];
-
-function makeCard(x, project) {
-  const card = document.createElement('div');
-  card.style.cssText = 'position:absolute;left:' + x + 'vw;top:20vh;width:20vw;height:30vh;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#fff;font-family:sans-serif;';
-  const img = document.createElement('img');
-  img.src = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/project_' + project.cat.toLowerCase() + '.jpg';
-  img.alt = project.title;
-  img.style.width = '100%';
-  img.style.height = '100%';
-  img.style.objectFit = 'cover';
-  card.appendChild(img);
-  const name = document.createElement('p');
-  name.textContent = project.title;
-  name.style.margin = '0.5em 0 0 0';
-  name.style.fontWeight = 'bold';
-  card.appendChild(name);
-  document.body.appendChild(card);
-  return card;
+function makeCardTexture(title, subtitle, hue) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 320;
+  const g = canvas.getContext('2d');
+  const gradient = g.createLinearGradient(0, 0, 512, 320);
+  gradient.addColorStop(0, `hsl(${hue}, 70%, 45%)`);
+  gradient.addColorStop(1, `hsl(${(hue + 60) % 360}, 70%, 25%)`);
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, 512, 320);
+  g.fillStyle = 'rgba(255,255,255,0.95)';
+  g.font = 'bold 44px sans-serif';
+  g.fillText(title, 32, 160);
+  g.fillStyle = 'rgba(255,255,255,0.7)';
+  g.font = '24px sans-serif';
+  g.fillText(subtitle, 32, 205);
+  return new THREE.CanvasTexture(canvas);
 }
 
-const cards = projects.slice(0, 7).map((project, i) => makeCard(i * 3 - 6, project));
+const projects = [
+  { title: 'Aurora', sub: 'Brand identity', cat: 'Brand', hue: 200 },
+  { title: 'Pulse', sub: 'Fitness app', cat: 'App', hue: 340 },
+  { title: 'Nimbus', sub: 'Weather website', cat: 'Web', hue: 210 },
+  { title: 'Vertex', sub: '3D product page', cat: 'Web', hue: 270 },
+  { title: 'Lumen', sub: 'Lighting brand', cat: 'Brand', hue: 45 },
+  { title: 'Orbit', sub: 'Travel app', cat: 'App', hue: 160 },
+  { title: 'Prism', sub: 'Portfolio site', cat: 'Web', hue: 300 }
+];
 
-const hint = document.getElementById('info');
-hint.innerHTML = '<a href="https://threejs.org" target="_blank">Three.js</a> portfolio gallery<br>Use the arrow keys to browse';
+scene.background = new THREE.Color(0x0b0b10);
+camera.position.set(0, 1.5, 9);
 
-let index = 3;
-cards[index].style.transform = 'scale(1.2)';
-cards[index].querySelector('a').style.display = 'block';
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2(10, 10); // offscreen initially
+let current = null;
 
-window.addEventListener('keydown', (event) => {
-  if (event.code === 'ArrowLeft' && index > 0 || event.code === 'ArrowRight' && index < 6) {
-    cards[index].style.transform = '';
-    cards[index].querySelector('a').style.display = 'none';
-    index += event.code === 'ArrowLeft' ? -1 : 1;
-    cards[index].style.transform = 'scale(1.2)';
-    cards[index].querySelector('a').style.display = 'block';
-    hint.textContent = projects[index].title + ' | ' + projects[index].cat + ' | <a href="' + projects[index].url + '" target="_blank">Visit site</a>';
-  }
+const hint = document.createElement('div');
+hint.style.cssText = 'position:fixed;bottom:20px;left:0;right:0;text-align:center;color:#fff;font:18px sans-serif;';
+document.body.appendChild(hint);
+
+function updateHint() {
+  hint.textContent = current ? current.title : 'Hover over a card';
+}
+
+const group = new THREE.Group();
+scene.add(group);
+
+projects.slice().sort(() => Math.random() - 0.5).forEach((p, i) => {
+  const card = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.2, 1.4),
+    new THREE.MeshBasicMaterial({ map: makeCardTexture(p.title, p.sub, p.hue) })
+  );
+  card.position.x = (i - 3) * 2.6;
+  group.add(card);
+
+  card.userData = { ...p, index: i };
+  card.onPointerOver = () => {
+    if (current !== card) {
+      current?.scale.set(1, 1, 1);
+      current = card;
+      current.scale.set(1.1, 1.1, 1.1);
+      updateHint();
+    }
+  };
+  card.onPointerOut = () => {
+    if (current === card) {
+      current.scale.set(1, 1, 1);
+      current = null;
+      updateHint();
+    }
+  };
+
+  card.onRaycast = (intersections, ray) => {
+    const hit = intersections.find(i => i.object === card);
+    if (hit) {
+      pointer.copy(hit.uv).multiplyScalar(2).subScalar(1);
+      ray.origin.copy(camera.position);
+      ray.direction.set(pointer.x, pointer.y, -1).normalize();
+    } else {
+      pointer.set(10, 10); // offscreen
+    }
+  };
 });
 
+renderer.domElement.style.cursor = 'none';
+
+const hintTimer = { start: null };
+function showHint() {
+  hint.style.opacity = 1;
+  hintTimer.start = performance.now();
+}
+function hideHint() {
+  hint.style.opacity = 0;
+}
+window.addEventListener('pointermove', showHint);
+window.addEventListener('mouseleave', hideHint);
+
+const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
-  camera.position.x += (index * 3 - camera.position.x) * 0.05;
+  const t = clock.getElapsedTime();
+  group.rotation.y = Math.sin(t * 0.5) * 0.05;
+  raycaster.setFromCamera(pointer, camera);
+  raycaster.intersectObjects(scene.children, false).forEach(intersection => {
+    intersection.object.onRaycast(intersection.intersections, raycaster.ray);
+  });
   renderer.render(scene, camera);
+  if (hintTimer.start && performance.now() - hintTimer.start > 2000) hideHint();
 });
 
 </script>
