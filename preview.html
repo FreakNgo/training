@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Gallery</title>
+<style>body { margin: 0; overflow: hidden; background: #000; }</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.z = 5;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+scene.background = new THREE.Color(0x101018);
+camera.position.set(0, 1.5, 9);
+
+const projects = [
+  { title: 'Aurora', cat: 'Web', url: 'https://aurora.jeromeetienne.com/' },
+  { title: 'Lumen', cat: 'Brand', url: 'https://lumen.jeromeetienne.com/' },
+  { title: 'Prism', cat: 'App', url: 'https://prism.jeromeetienne.com/' },
+  { title: 'Echo', cat: 'Web', url: 'https://echo.jeromeetienne.com/' },
+  { title: 'Nova', cat: 'Brand', url: 'https://nova.jeromeetienne.com/' },
+  { title: 'Orbit', cat: 'App', url: 'https://orbit.jeromeetienne.com/' },
+  { title: 'Pulse', cat: 'Web', url: 'https://pulse.jeromeetienne.com/' }
+];
+
+function makeCard(x, project) {
+  const card = document.createElement('div');
+  card.style.cssText = 'position:absolute;left:' + x + 'vw;top:30vh;width:240px;height:160px;border-radius:12px;overflow:hidden;';
+  const img = document.createElement('img');
+  img.src = project.url + 'card.jpg';
+  img.style.width = '100%';
+  img.style.height = '100%';
+  img.style.objectFit = 'cover';
+  card.appendChild(img);
+  const title = document.createElement('h3');
+  title.textContent = project.title;
+  title.style.cssText = 'margin:0;padding:0 16px;font-size:16px;color:#fff;text-align:center;margin-top:10px;';
+  card.appendChild(title);
+  document.body.appendChild(card);
+  return card;
+}
+
+const cards = projects.slice(0, 7).map((project, i) => makeCard(i * 33 - 49, project));
+
+const hint = document.createElement('div');
+hint.textContent = 'Use the left and right arrows to browse the portfolio.';
+hint.style.cssText = 'position:fixed;bottom:20px;left:0;right:0;text-align:center;color:#aaa;font:14px sans-serif;';
+document.body.appendChild(hint);
+
+let current = 0;
+cards[current].style.transform = 'scale(1.1)';
+const status = document.getElementById('status') || document.createElement('div');
+status.textContent = projects[current].title;
+status.style.cssText = 'position:fixed;bottom:60px;left:0;right:0;text-align:center;color:#fff;font:24px sans-serif;';
+document.body.appendChild(status);
+
+window.addEventListener('keydown', (event) => {
+  if (event.code === 'ArrowLeft' && current > 0) current--;
+  if (event.code === 'ArrowRight' && current < 6) current++;
+  cards.forEach((card, i) => {
+    card.style.transform = 'scale(' + (i === current ? 1.1 : 1) + ')';
+  });
+  status.textContent = projects[current].title;
+  status.style.opacity = 1;
+  setTimeout(() => status.style.opacity = 0, 1200);
+});
+
+renderer.setAnimationLoop(() => {
+  camera.position.x += (current * 3 - camera.position.x) * 0.05;
+  camera.lookAt(0, 1.5, 0);
+  renderer.render(scene, camera);
+});
+
+</script>
+</body>
+</html>
